@@ -34,7 +34,7 @@ services:
   backend:
     build:
       context: ./backend
-    container_name: fastapi-backend
+    container_name: posture-app-backend
     restart: always
     volumes:
       - ./backend:/app
@@ -51,6 +51,10 @@ services:
       DB_USER: user
       DB_PASSWORD: UserSecurePass123!
       DB_NAME: testdb
+      # 추가 환경 변수
+      SECRET_KEY: posture-app-secret-key-2024
+      ALGORITHM: HS256
+      ACCESS_TOKEN_EXPIRE_MINUTES: 30
     command:
       [
         "uvicorn",
