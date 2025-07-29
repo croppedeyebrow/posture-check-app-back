@@ -7,9 +7,7 @@ services:
     restart: always
     environment:
       MYSQL_ROOT_PASSWORD: Lee289473007216!
-      MYSQL_DATABASE: testdb
-      MYSQL_USER: user
-      MYSQL_PASSWORD: UserSecurePass123!
+      MYSQL_DATABASE: posture_app
     ports:
       - "3307:3306"
     volumes:
@@ -23,8 +21,8 @@ services:
           "-h",
           "localhost",
           "-u",
-          "user",
-          "-pUserSecurePass123!",
+          "root",
+          "-pLee289473007216!",
         ]
       timeout: 20s
       retries: 10
@@ -48,9 +46,9 @@ services:
     environment:
       DB_HOST: db
       DB_PORT: 3306
-      DB_USER: user
-      DB_PASSWORD: UserSecurePass123!
-      DB_NAME: testdb
+      DB_USER: root
+      DB_PASSWORD: Lee289473007216!
+      DB_NAME: posture_app
       # 추가 환경 변수
       SECRET_KEY: posture-app-secret-key-2024
       ALGORITHM: HS256

@@ -8,3 +8,4 @@ python-dotenv
 sqlalchemy
 alembic
 pydantic
+pydantic-settings

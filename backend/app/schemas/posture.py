@@ -63,7 +63,7 @@ class PostureSession(PostureSessionBase):
 class PostureAnalysisBase(BaseModel):
     problem_description: str
     solution_suggestion: str
-    severity_level: str = Field(..., regex="^(low|medium|high)$")
+    severity_level: str = Field(..., pattern="^(low|medium|high)$")
     neck_angle_deviation: float
     forward_head_deviation: float
     head_tilt_deviation: float

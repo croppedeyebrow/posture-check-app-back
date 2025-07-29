@@ -11,7 +11,8 @@ Posture Check App Backend - 설정 관리 모듈
 
 import os
 from typing import List, Optional
-from pydantic import BaseSettings, validator
+from pydantic_settings import BaseSettings
+from pydantic import validator
 from dotenv import load_dotenv
 
 # .env 파일에서 환경 변수 로드
@@ -77,4 +78,11 @@ class Settings(BaseSettings):
 
 # 전역 설정 인스턴스 생성
 # 애플리케이션 전체에서 이 인스턴스를 사용하여 설정에 접근
-settings = Settings() 
+import os
+
+# 로컬 설정 사용 여부 확인
+if os.getenv("USE_LOCAL_CONFIG") == "true":
+    from .config_local import local_settings
+    settings = local_settings
+else:
+    settings = Settings() 
