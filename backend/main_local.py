@@ -7,6 +7,9 @@ import uvicorn
 import sys
 import os
 
+# 현재 디렉토리를 Python 경로에 추가
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 # 로컬 설정을 사용하도록 환경 변수 설정
 os.environ["USE_LOCAL_CONFIG"] = "true"
 
@@ -18,7 +21,7 @@ if __name__ == "__main__":
     print("🏥 헬스 체크: http://localhost:8001/health")
     
     uvicorn.run(
-        "app.main:app",
+        "backend.app.main:app",  # backend 디렉토리에서 실행할 수 있도록 경로 수정
         host="0.0.0.0",
         port=8001,  # Docker와 다른 포트 사용
         reload=True,

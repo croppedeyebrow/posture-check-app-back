@@ -5,6 +5,9 @@ from ..schemas.user import UserCreate, UserUpdate
 from ..core.security import get_password_hash, verify_password
 
 class CRUDUser:
+    def __init__(self):
+        self.model = User
+    
     def get(self, db: Session, id: int) -> Optional[User]:
         """ID로 사용자 조회"""
         return db.query(User).filter(User.id == id).first()

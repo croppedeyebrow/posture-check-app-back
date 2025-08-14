@@ -42,6 +42,10 @@ class PostureRecord(Base):
     right_scapular_winging = Column(Float, comment="오른쪽 견갑골 날개 (mm) - 오른쪽 어깨뼈가 튀어나온 정도")
     shoulder_forward_movement = Column(Float, comment="어깨 전방 이동 (mm) - 어깨가 앞으로 나온 거리")
     
+    # ==================== 프론트엔드 추가 필드 ====================
+    head_rotation = Column(Float, comment="머리 회전 (도) - 머리가 좌우로 회전한 각도")
+    issues = Column(Text, comment="발견된 문제점들 (JSON 형태로 저장)")
+    
     # ==================== 메타데이터 ====================
     session_id = Column(String(100), comment="세션 ID - 측정 세션을 구분하는 고유 식별자")
     device_info = Column(String(200), comment="기기 정보 - 측정에 사용된 기기 및 브라우저 정보")

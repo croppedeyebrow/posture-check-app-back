@@ -2,13 +2,143 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from typing import List, Optional
 from datetime import datetime, timedelta
+import json
+import uuid
 
 from ....db.session import get_db
-from ....schemas.posture import PostureRecordCreate, PostureRecord, PostureStats, PostureTrend, MedicalStandards
+from ....schemas.posture import (
+    PostureRecordCreate, PostureRecord, PostureStats, PostureTrend, MedicalStandards,
+    PostureDataSave, PostureAnalysisConfig, PostureAnalysisSession
+)
 from ....crud.posture import posture_record
 from ....core.config import settings
 
 router = APIRouter()
+
+# 활성 세션 저장소 (실제 프로덕션에서는 Redis나 DB 사용 권장)
+active_sessions = {}
+
+@router.post("/save", response_model=PostureRecord)
+def save_posture_data(
+    posture_data: PostureDataSave,
+    user_id: int = Query(..., description="사용자 ID"),
+    db: Session = Depends(get_db)
+):
+    """웹캠을 통한 자세 측정 데이터 저장"""
+    try:
+        # issues를 JSON 문자열로 변환
+        issues_json = json.dumps(posture_data.issues) if posture_data.issues else "[]"
+        
+        # PostureRecordCreate 형태로 변환
+        record_data = PostureRecordCreate(
+            neck_angle=posture_data.neck_angle,
+            shoulder_slope=posture_data.shoulder_slope,
+            head_forward=posture_data.head_forward,
+            shoulder_height_diff=posture_data.shoulder_height_diff,
+            score=posture_data.score,
+            cervical_lordosis=posture_data.cervical_lordosis,
+            forward_head_distance=posture_data.forward_head_distance,
+            head_tilt=posture_data.head_tilt,
+            left_shoulder_height_diff=0.0,  # 기본값 설정
+            left_scapular_winging=0.0,      # 기본값 설정
+            right_scapular_winging=0.0,     # 기본값 설정
+            shoulder_forward_movement=posture_data.shoulder_forward_movement,
+            head_rotation=posture_data.head_rotation,
+            issues=issues_json,
+            session_id=posture_data.session_id or f"session_{uuid.uuid4().hex[:8]}",
+            device_info=posture_data.device_info
+        )
+        
+        result = posture_record.create(db, user_id, record_data)
+        
+        # issues 필드를 다시 리스트로 변환하여 응답
+        result.issues = posture_data.issues
+        
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"자세 데이터 저장 실패: {str(e)}")
+
+@router.post("/analysis/start", response_model=PostureAnalysisSession)
+def start_posture_analysis(
+    config: PostureAnalysisConfig,
+    db: Session = Depends(get_db)
+):
+    """실시간 자세 분석 세션 시작"""
+    try:
+        session_id = config.session_id or f"analysis_{uuid.uuid4().hex[:8]}"
+        
+        # 세션 정보 생성
+        session_info = PostureAnalysisSession(
+            session_id=session_id,
+            user_id=config.user_id,
+            start_time=datetime.now(),
+            status="active",
+            device_info=config.device_info
+        )
+        
+        # 활성 세션에 저장
+        active_sessions[session_id] = {
+            "user_id": config.user_id,
+            "start_time": session_info.start_time,
+            "status": "active",
+            "device_info": config.device_info,
+            "analysis_interval": config.analysis_interval,
+            "record_count": 0
+        }
+        
+        return session_info
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"자세 분석 세션 시작 실패: {str(e)}")
+
+@router.post("/analysis/stop")
+def stop_posture_analysis(
+    session_id: str,
+    db: Session = Depends(get_db)
+):
+    """실시간 자세 분석 세션 중지"""
+    try:
+        if session_id not in active_sessions:
+            raise HTTPException(status_code=404, detail="세션을 찾을 수 없습니다")
+        
+        # 세션 상태 업데이트
+        active_sessions[session_id]["status"] = "stopped"
+        active_sessions[session_id]["end_time"] = datetime.now()
+        
+        # 세션 통계 계산
+        session_data = active_sessions[session_id]
+        duration = (session_data["end_time"] - session_data["start_time"]).total_seconds()
+        
+        return {
+            "session_id": session_id,
+            "status": "stopped",
+            "duration_seconds": int(duration),
+            "total_records": session_data["record_count"],
+            "message": "자세 분석 세션이 성공적으로 중지되었습니다"
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"자세 분석 세션 중지 실패: {str(e)}")
+
+@router.get("/analysis/sessions")
+def get_active_sessions():
+    """활성 분석 세션 목록 조회"""
+    try:
+        active_list = []
+        for session_id, session_data in active_sessions.items():
+            if session_data["status"] == "active":
+                active_list.append({
+                    "session_id": session_id,
+                    "user_id": session_data["user_id"],
+                    "start_time": session_data["start_time"],
+                    "device_info": session_data["device_info"],
+                    "record_count": session_data["record_count"]
+                })
+        
+        return {
+            "active_sessions": active_list,
+            "total_active": len(active_list)
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"활성 세션 조회 실패: {str(e)}")
 
 @router.post("/record", response_model=PostureRecord)
 def create_posture_record(

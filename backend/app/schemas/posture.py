@@ -20,6 +20,10 @@ class PostureRecordBase(BaseModel):
     right_scapular_winging: float = Field(..., description="오른쪽 견갑골 날개")
     shoulder_forward_movement: float = Field(..., description="어깨 전방 이동")
     
+    # 프론트엔드 추가 필드
+    head_rotation: float = Field(..., description="머리 회전")
+    issues: Optional[List[str]] = Field(default=[], description="발견된 문제점들")
+    
     # 메타데이터
     session_id: str = Field(..., description="세션 ID")
     device_info: Optional[str] = Field(None, description="기기 정보")
@@ -37,6 +41,36 @@ class PostureRecord(PostureRecordBase):
     
     class Config:
         from_attributes = True
+
+# 프론트엔드 요구사항에 맞는 새로운 스키마
+class PostureDataSave(BaseModel):
+    score: float = Field(..., ge=0, le=100, description="자세 점수 (0-100)")
+    neck_angle: float = Field(..., description="목 각도")
+    shoulder_slope: float = Field(..., description="어깨 기울기")
+    head_forward: float = Field(..., description="머리 전방 돌출도")
+    shoulder_height_diff: float = Field(..., description="어깨 높이 차이")
+    cervical_lordosis: float = Field(..., description="경추 전만")
+    forward_head_distance: float = Field(..., description="머리 전방 이동 거리")
+    head_tilt: float = Field(..., description="머리 기울기")
+    head_rotation: float = Field(..., description="머리 회전")
+    shoulder_forward_movement: float = Field(..., description="어깨 전방 이동")
+    issues: Optional[List[str]] = Field(default=[], description="발견된 문제점들")
+    timestamp: Optional[datetime] = Field(default_factory=datetime.now, description="측정 시간")
+    session_id: Optional[str] = Field(None, description="세션 ID")
+    device_info: Optional[str] = Field(None, description="기기 정보")
+
+class PostureAnalysisConfig(BaseModel):
+    user_id: int = Field(..., description="사용자 ID")
+    session_id: Optional[str] = Field(None, description="세션 ID")
+    device_info: Optional[str] = Field(None, description="기기 정보")
+    analysis_interval: Optional[int] = Field(5, description="분석 간격 (초)")
+
+class PostureAnalysisSession(BaseModel):
+    session_id: str
+    user_id: int
+    start_time: datetime
+    status: str = "active"  # active, stopped
+    device_info: Optional[str] = None
 
 # Posture Session 관련 스키마
 class PostureSessionBase(BaseModel):

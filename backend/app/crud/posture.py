@@ -18,9 +18,30 @@ class CRUDPostureRecord:
             settings.HEAD_TILT_NORMAL_MIN <= obj_in.head_tilt <= settings.HEAD_TILT_NORMAL_MAX
         )
         
+        # issues가 문자열이 아닌 경우 JSON으로 변환
+        issues_data = obj_in.issues
+        if isinstance(issues_data, list):
+            import json
+            issues_data = json.dumps(issues_data)
+        
         db_obj = PostureRecord(
             user_id=user_id,
-            **obj_in.dict(),
+            neck_angle=obj_in.neck_angle,
+            shoulder_slope=obj_in.shoulder_slope,
+            head_forward=obj_in.head_forward,
+            shoulder_height_diff=obj_in.shoulder_height_diff,
+            score=obj_in.score,
+            cervical_lordosis=obj_in.cervical_lordosis,
+            forward_head_distance=obj_in.forward_head_distance,
+            head_tilt=obj_in.head_tilt,
+            left_shoulder_height_diff=obj_in.left_shoulder_height_diff,
+            left_scapular_winging=obj_in.left_scapular_winging,
+            right_scapular_winging=obj_in.right_scapular_winging,
+            shoulder_forward_movement=obj_in.shoulder_forward_movement,
+            head_rotation=getattr(obj_in, 'head_rotation', 0.0),  # 새로운 필드
+            issues=issues_data,  # 새로운 필드
+            session_id=obj_in.session_id,
+            device_info=obj_in.device_info,
             is_neck_angle_normal=is_neck_angle_normal,
             is_forward_head_normal=is_forward_head_normal,
             is_head_tilt_normal=is_head_tilt_normal

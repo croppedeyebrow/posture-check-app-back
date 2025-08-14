@@ -56,4 +56,7 @@ def init_db():
     기존 테이블이 있는 경우 무시됨
     """
     from ..db.base import Base
+    # 모든 모델들을 import하여 테이블 생성
+    from ..models.user import User
+    from ..models.posture import PostureRecord, PostureSession, PostureAnalysis
     Base.metadata.create_all(bind=engine) 
