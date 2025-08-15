@@ -14,7 +14,7 @@ router = APIRouter()
 
 # 로그인 스키마
 class UserLogin(BaseModel):
-    username: str
+    email: str
     password: str
 
 class Token(BaseModel):
@@ -30,10 +30,10 @@ def login(
 ):
     """사용자 로그인"""
     try:
-        # 사용자 인증
-        user = user_crud.authenticate(db, username=user_credentials.username, password=user_credentials.password)
+        # 사용자 인증 (이메일로 사용자 찾기)
+        user = user_crud.authenticate_by_email(db, email=user_credentials.email, password=user_credentials.password)
         if not user:
-            raise HTTPException(status_code=401, detail="잘못된 사용자명 또는 비밀번호입니다")
+            raise HTTPException(status_code=401, detail="잘못된 이메일 또는 비밀번호입니다")
         
         if not user_crud.is_active(user):
             raise HTTPException(status_code=400, detail="비활성화된 사용자입니다")

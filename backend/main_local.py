@@ -25,5 +25,5 @@ if __name__ == "__main__":
         host="0.0.0.0",
         port=8001,  # Docker와 다른 포트 사용
         reload=True,
-        log_level="info"
+        log_level="debug"  # 더 자세한 오류 정보를 위해 debug 레벨로 변경
     ) 

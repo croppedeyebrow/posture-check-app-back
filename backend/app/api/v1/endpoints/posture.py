@@ -21,41 +21,63 @@ active_sessions = {}
 @router.post("/save", response_model=PostureRecord)
 def save_posture_data(
     posture_data: PostureDataSave,
-    user_id: int = Query(..., description="사용자 ID"),
     db: Session = Depends(get_db)
 ):
     """웹캠을 통한 자세 측정 데이터 저장"""
     try:
-        # issues를 JSON 문자열로 변환
-        issues_json = json.dumps(posture_data.issues) if posture_data.issues else "[]"
+        print(f"받은 데이터: {posture_data}")
         
-        # PostureRecordCreate 형태로 변환
+        # issues를 JSON 문자열로 변환 (dict 리스트를 문자열 리스트로 변환)
+        issues_list = []
+        if posture_data.issues:
+            for issue in posture_data.issues:
+                if isinstance(issue, dict):
+                    # dict에서 필요한 정보 추출 (예: message, type 등)
+                    if 'message' in issue:
+                        issues_list.append(issue['message'])
+                    elif 'type' in issue:
+                        issues_list.append(issue['type'])
+                    else:
+                        issues_list.append(str(issue))
+                else:
+                    issues_list.append(str(issue))
+        issues_json = json.dumps(issues_list)
+        
+        print(f"변환된 issues: {issues_json}")
+        
+        # PostureRecordCreate 형태로 변환 (camelCase에서 snake_case로 변환)
         record_data = PostureRecordCreate(
-            neck_angle=posture_data.neck_angle,
-            shoulder_slope=posture_data.shoulder_slope,
-            head_forward=posture_data.head_forward,
-            shoulder_height_diff=posture_data.shoulder_height_diff,
+            neck_angle=posture_data.neckAngle,
+            shoulder_slope=posture_data.shoulderSlope,
+            head_forward=posture_data.headForward,
+            shoulder_height_diff=posture_data.shoulderHeightDiff,
             score=posture_data.score,
-            cervical_lordosis=posture_data.cervical_lordosis,
-            forward_head_distance=posture_data.forward_head_distance,
-            head_tilt=posture_data.head_tilt,
+            cervical_lordosis=posture_data.cervicalLordosis,
+            forward_head_distance=posture_data.forwardHeadDistance,
+            head_tilt=posture_data.headTilt,
             left_shoulder_height_diff=0.0,  # 기본값 설정
             left_scapular_winging=0.0,      # 기본값 설정
             right_scapular_winging=0.0,     # 기본값 설정
-            shoulder_forward_movement=posture_data.shoulder_forward_movement,
-            head_rotation=posture_data.head_rotation,
+            shoulder_forward_movement=posture_data.shoulderForwardMovement,
+            head_rotation=posture_data.headRotation,
             issues=issues_json,
-            session_id=posture_data.session_id or f"session_{uuid.uuid4().hex[:8]}",
-            device_info=posture_data.device_info
+            session_id=posture_data.sessionId or f"session_{uuid.uuid4().hex[:8]}",
+            device_info=posture_data.deviceInfo
         )
         
-        result = posture_record.create(db, user_id, record_data)
+        print(f"생성된 record_data: {record_data}")
         
-        # issues 필드를 다시 리스트로 변환하여 응답
-        result.issues = posture_data.issues
+        result = posture_record.create(db, posture_data.userId, record_data)
+        
+        # issues 필드를 JSON 문자열로 유지 (데이터베이스에서 가져온 그대로)
+        # result.issues는 이미 JSON 문자열이므로 그대로 사용
         
         return result
     except Exception as e:
+        import traceback
+        error_traceback = traceback.format_exc()
+        print(f"오류 발생: {str(e)}")
+        print(f"오류 상세: {error_traceback}")
         raise HTTPException(status_code=500, detail=f"자세 데이터 저장 실패: {str(e)}")
 
 @router.post("/analysis/start", response_model=PostureAnalysisSession)

@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, validator
 from typing import Optional, List
 from datetime import datetime
 
@@ -22,7 +22,7 @@ class PostureRecordBase(BaseModel):
     
     # 프론트엔드 추가 필드
     head_rotation: float = Field(..., description="머리 회전")
-    issues: Optional[List[str]] = Field(default=[], description="발견된 문제점들")
+    issues: Optional[str] = Field(default="[]", description="발견된 문제점들 (JSON 문자열)")
     
     # 메타데이터
     session_id: str = Field(..., description="세션 ID")
@@ -42,22 +42,55 @@ class PostureRecord(PostureRecordBase):
     class Config:
         from_attributes = True
 
-# 프론트엔드 요구사항에 맞는 새로운 스키마
+# 프론트엔드 요구사항에 맞는 새로운 스키마 (camelCase 필드명 사용)
 class PostureDataSave(BaseModel):
+    userId: int = Field(..., description="사용자 ID")
     score: float = Field(..., ge=0, le=100, description="자세 점수 (0-100)")
-    neck_angle: float = Field(..., description="목 각도")
-    shoulder_slope: float = Field(..., description="어깨 기울기")
-    head_forward: float = Field(..., description="머리 전방 돌출도")
-    shoulder_height_diff: float = Field(..., description="어깨 높이 차이")
-    cervical_lordosis: float = Field(..., description="경추 전만")
-    forward_head_distance: float = Field(..., description="머리 전방 이동 거리")
-    head_tilt: float = Field(..., description="머리 기울기")
-    head_rotation: float = Field(..., description="머리 회전")
-    shoulder_forward_movement: float = Field(..., description="어깨 전방 이동")
-    issues: Optional[List[str]] = Field(default=[], description="발견된 문제점들")
+    neckAngle: float = Field(..., description="목 각도")
+    shoulderSlope: float = Field(..., description="어깨 기울기")
+    headForward: float = Field(..., description="머리 전방 돌출도")
+    shoulderHeightDiff: float = Field(..., description="어깨 높이 차이")
+    cervicalLordosis: Optional[float] = Field(0.0, description="경추 전만")
+    forwardHeadDistance: float = Field(..., description="머리 전방 이동 거리")
+    headTilt: float = Field(..., description="머리 기울기")
+    headRotation: Optional[float] = Field(0.0, description="머리 회전")
+    shoulderForwardMovement: Optional[float] = Field(0.0, description="어깨 전방 이동")
+    issues: Optional[List[dict]] = Field(default=[], description="발견된 문제점들")
     timestamp: Optional[datetime] = Field(default_factory=datetime.now, description="측정 시간")
-    session_id: Optional[str] = Field(None, description="세션 ID")
-    device_info: Optional[str] = Field(None, description="기기 정보")
+    sessionId: Optional[str] = Field(None, description="세션 ID")
+    deviceInfo: Optional[str] = Field(None, description="기기 정보")
+    
+    # 문자열을 숫자로 자동 변환하는 validator 추가
+    
+    @validator('neckAngle', 'shoulderSlope', 'headForward', 'shoulderHeightDiff', 
+               'cervicalLordosis', 'forwardHeadDistance', 'headTilt', 'headRotation', 
+               'shoulderForwardMovement', pre=True)
+    def convert_string_to_float(cls, v):
+        if isinstance(v, str):
+            try:
+                return float(v)
+            except ValueError:
+                return 0.0
+        return v
+    
+    @validator('score', pre=True)
+    def convert_score_to_float(cls, v):
+        if isinstance(v, (str, int)):
+            try:
+                return float(v)
+            except ValueError:
+                return 0.0
+        return v
+    
+    @validator('userId', pre=True)
+    def convert_user_id_to_int(cls, v):
+        if isinstance(v, str):
+            try:
+                return int(v)
+            except ValueError:
+                return 1
+        return v
+
 
 class PostureAnalysisConfig(BaseModel):
     user_id: int = Field(..., description="사용자 ID")

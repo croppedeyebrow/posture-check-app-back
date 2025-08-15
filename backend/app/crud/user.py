@@ -47,8 +47,17 @@ class CRUDUser:
         return db_obj
     
     def authenticate(self, db: Session, username: str, password: str) -> Optional[User]:
-        """사용자 인증"""
+        """사용자명으로 사용자 인증"""
         user = self.get_by_username(db, username=username)
+        if not user:
+            return None
+        if not verify_password(password, user.hashed_password):
+            return None
+        return user
+    
+    def authenticate_by_email(self, db: Session, email: str, password: str) -> Optional[User]:
+        """이메일로 사용자 인증"""
+        user = self.get_by_email(db, email=email)
         if not user:
             return None
         if not verify_password(password, user.hashed_password):
