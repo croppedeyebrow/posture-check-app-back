@@ -105,83 +105,35 @@ def health_check():
     """
     헬스 체크 엔드포인트
     
-    애플리케이션과 데이터베이스의 상태를 확인
-    로드 밸런서나 모니터링 시스템에서 사용
+    애플리케이션과 데이터베이스 연결 상태를 확인
     """
     try:
+        # 데이터베이스 연결 테스트
         with get_db_connection() as conn:
             with conn.cursor() as cursor:
                 cursor.execute("SELECT 1")
                 result = cursor.fetchone()
-                return {
-                    "status": "healthy",
-                    "database": "connected",
-                    "message": "자세 교정 앱 백엔드가 정상적으로 작동 중입니다.",
-                    "version": settings.VERSION
-                }
+                if result[0] == 1:
+                    return {
+                        "status": "healthy",
+                        "database": "connected",
+                        "message": "애플리케이션이 정상적으로 작동 중입니다."
+                    }
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"데이터베이스 연결 실패: {str(e)}")
-
-@app.get("/db-test")
-def test_database():
-    """
-    데이터베이스 테스트 엔드포인트
-    
-    개발 및 디버깅용 엔드포인트
-    데이터베이스 연결 및 기본 CRUD 작업 테스트
-    """
-    try:
-        with get_db_connection() as conn:
-            with conn.cursor() as cursor:
-                # 테스트 테이블 생성 (없는 경우)
-                cursor.execute("""
-                    CREATE TABLE IF NOT EXISTS test_table (
-                        id INT AUTO_INCREMENT PRIMARY KEY,
-                        message VARCHAR(255),
-                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-                    )
-                """)
-                
-                # 테스트 데이터 삽입
-                cursor.execute("INSERT INTO test_table (message) VALUES (%s)", ("Posture Check App 테스트",))
-                conn.commit()
-                
-                # 데이터 조회
-                cursor.execute("SELECT * FROM test_table ORDER BY created_at DESC LIMIT 5")
-                results = cursor.fetchall()
-                
-                return {
-                    "message": "데이터베이스 테스트 성공",
-                    "data": [
-                        {"id": row[0], "message": row[1], "created_at": str(row[2])}
-                        for row in results
-                    ]
-                }
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"데이터베이스 테스트 실패: {str(e)}")
-
-@app.get("/api-info")
-def get_api_info():
-    """
-    API 정보 조회 엔드포인트
-    
-    애플리케이션의 기능과 사용 가능한 엔드포인트 정보 제공
-    개발자 문서화 및 API 탐색용
-    """
-    return {
-        "app_name": settings.PROJECT_NAME,
-        "version": settings.VERSION,
-        "description": "자세 교정 앱을 위한 FastAPI 백엔드",
-        "features": [
-            "자세 기록 저장 및 조회",
-            "실시간 자세 분석",
-            "의학적 기준 기반 판단",
-            "자세 통계 및 트렌드 분석",
-            "13개 자세 지표 지원"
-        ],
-        "endpoints": {
-            "posture": f"{settings.API_V1_STR}/posture/*",  # 자세 관련 API
-            "health": "/health",                            # 헬스 체크
-            "docs": "/docs"                                 # API 문서
+        return {
+            "status": "unhealthy",
+            "database": "disconnected",
+            "error": str(e),
+            "message": "데이터베이스 연결에 문제가 있습니다."
         }
+    
+    return {
+        "status": "unhealthy",
+        "message": "알 수 없는 오류가 발생했습니다."
     }
+
+# Render 배포를 위한 포트 설정
+if __name__ == "__main__":
+    import uvicorn
+    port = int(os.environ.get("PORT", 8000))
+    uvicorn.run(app, host="0.0.0.0", port=port)

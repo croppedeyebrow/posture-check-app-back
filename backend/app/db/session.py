@@ -1,62 +1,63 @@
 """
-Posture Check App Backend - 데이터베이스 세션 관리
+Posture Check App Backend - 데이터베이스 세션 관리 모듈
 
-이 모듈은 SQLAlchemy를 사용한 데이터베이스 연결과 세션을 관리합니다.
-- 데이터베이스 엔진 생성 및 설정
-- 세션 팩토리 생성
-- 의존성 주입을 위한 세션 제공 함수
-- 데이터베이스 초기화 함수
+이 모듈은 SQLAlchemy를 사용한 데이터베이스 연결 및 세션 관리를 담당합니다.
+- 데이터베이스 엔진 생성
+- 세션 팩토리 설정
+- 연결 풀 관리
 """
 
 from sqlalchemy import create_engine
+from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from ..core.config import settings
+import os
 
-# ==================== 데이터베이스 URL 구성 ====================
-# MySQL + PyMySQL 드라이버를 사용한 연결 문자열 생성
-DATABASE_URL = f"mysql+pymysql://{settings.DB_USER}:{settings.DB_PASSWORD}@{settings.DB_HOST}:{settings.DB_PORT}/{settings.DB_NAME}"
+# 데이터베이스 URL 구성
+DATABASE_URL = settings.get_database_url()
 
-# ==================== SQLAlchemy 엔진 생성 ====================
+# Railway MySQL 연결 설정
+def get_connect_args():
+    """데이터베이스 연결 인자 반환"""
+    # Railway는 기본적으로 SSL을 지원하므로 별도 설정 불필요
+    return {}
+
+# SQLAlchemy 엔진 생성
 engine = create_engine(
     DATABASE_URL,
-    pool_pre_ping=True,  # 연결 상태 확인 (연결이 끊어진 경우 자동 재연결)
-    pool_recycle=3600,   # 1시간마다 연결 재생성 (MySQL 연결 타임아웃 방지)
-    echo=False           # SQL 로그 출력 여부 (개발 시 True로 설정 가능)
+    pool_pre_ping=True,  # 연결 상태 확인
+    pool_recycle=300,    # 5분마다 연결 재생성
+    pool_size=10,        # 연결 풀 크기
+    max_overflow=20,     # 최대 오버플로우 연결 수
+    echo=False,          # SQL 로그 출력 (개발 시 True로 설정)
+    connect_args=get_connect_args()
 )
 
-# ==================== 세션 팩토리 생성 ====================
-# 데이터베이스 세션을 생성하는 팩토리
-# autocommit=False: 트랜잭션 수동 관리
-# autoflush=False: 자동 플러시 비활성화
+# 세션 팩토리 생성
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
-# ==================== 데이터베이스 의존성 함수 ====================
+# 베이스 클래스 생성
+Base = declarative_base()
+
 def get_db():
     """
-    데이터베이스 세션을 제공하는 의존성 함수
+    데이터베이스 세션 생성기
     
-    FastAPI의 Depends에서 사용되어 각 요청마다 새로운 데이터베이스 세션을 제공
-    요청이 완료되면 자동으로 세션을 닫음
-    
-    Returns:
-        Session: SQLAlchemy 데이터베이스 세션
+    각 요청마다 새로운 세션을 생성하고 요청 완료 후 자동으로 닫힘
     """
     db = SessionLocal()
     try:
-        yield db  # 세션을 요청 처리 함수에 제공
+        yield db
     finally:
-        db.close()  # 요청 완료 후 세션 닫기
+        db.close()
 
-# ==================== 데이터베이스 초기화 함수 ====================
 def init_db():
     """
-    데이터베이스 테이블 생성
+    데이터베이스 초기화
     
-    애플리케이션 시작 시 모든 모델의 테이블을 자동으로 생성
-    기존 테이블이 있는 경우 무시됨
+    모든 테이블을 생성합니다.
     """
-    from ..db.base import Base
-    # 모든 모델들을 import하여 테이블 생성
-    from ..models.user import User
-    from ..models.posture import PostureRecord, PostureSession, PostureAnalysis
+    # 모든 모델을 import하여 테이블 생성
+    from ..models import user, posture
+    
     Base.metadata.create_all(bind=engine) 

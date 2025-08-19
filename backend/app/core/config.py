@@ -37,13 +37,22 @@ class Settings(BaseSettings):
     DB_PASSWORD: str = os.getenv("DB_PASSWORD", "password")    # 데이터베이스 비밀번호
     DB_NAME: str = os.getenv("DB_NAME", "testdb")             # 데이터베이스 이름
     
+    # 배포용 데이터베이스 연결 URL (우선순위: DATABASE_URL > MYSQL_PUBLIC_URL > 개별 설정)
+    DATABASE_URL: Optional[str] = os.getenv("DATABASE_URL")
+    MYSQL_PUBLIC_URL: Optional[str] = os.getenv("MYSQL_PUBLIC_URL")
+    
     # ==================== 보안 설정 ====================
     SECRET_KEY: str = os.getenv("SECRET_KEY", "posture-app-secret-key-2024")  # JWT 시크릿 키
     ALGORITHM: str = os.getenv("ALGORITHM", "HS256")                          # JWT 알고리즘
     ACCESS_TOKEN_EXPIRE_MINUTES: int = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "30"))  # 토큰 만료 시간
     
     # ==================== CORS 설정 ====================
-    BACKEND_CORS_ORIGINS: List[str] = ["*"]  # 허용할 도메인 목록 (개발용: 모든 도메인 허용)
+    BACKEND_CORS_ORIGINS: List[str] = [
+        "https://posture-check-app.vercel.app",  # Vercel 프론트엔드
+        "http://localhost:3000",                 # 로컬 개발용
+        "http://localhost:8080",                 # 로컬 개발용
+        "*"                                      # 개발용 (모든 도메인 허용)
+    ]
     
     @validator("BACKEND_CORS_ORIGINS", pre=True)
     def assemble_cors_origins(cls, v):
@@ -65,6 +74,23 @@ class Settings(BaseSettings):
     FORWARD_HEAD_DISTANCE_MAX: float = 100.0 # 전방 머리 거리 최대 정상값 (mm)
     HEAD_TILT_NORMAL_MIN: float = -15.0     # 머리 기울기 정상 범위 최소값 (도)
     HEAD_TILT_NORMAL_MAX: float = 15.0      # 머리 기울기 정상 범위 최대값 (도)
+    
+    def get_database_url(self) -> str:
+        """
+        데이터베이스 연결 URL 반환
+        
+        우선순위: DATABASE_URL > MYSQL_PUBLIC_URL > 개별 설정으로 구성
+        """
+        # 1. DATABASE_URL 우선 사용 (Render 배포용)
+        if self.DATABASE_URL:
+            return self.DATABASE_URL
+        
+        # 2. MYSQL_PUBLIC_URL 사용 (Railway 직접 연결용)
+        if self.MYSQL_PUBLIC_URL:
+            return self.MYSQL_PUBLIC_URL
+        
+        # 3. 개별 설정으로 구성 (로컬 개발용)
+        return f"mysql+pymysql://{self.DB_USER}:{self.DB_PASSWORD}@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}"
     
     class Config:
         """

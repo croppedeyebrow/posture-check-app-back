@@ -1,0 +1,25 @@
+services:
+  - type: web
+    name: posture-app-backend
+    env: python
+    plan: free
+    buildCommand: pip install -r backend/requirements.txt
+    startCommand: cd backend && uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.0
+      # 배포용 데이터베이스 연결 (Railway MYSQL_PUBLIC_URL을 DATABASE_URL로 설정)
+      - key: DATABASE_URL
+        sync: false
+      # CORS 설정 (Vercel 프론트엔드 허용)
+      - key: BACKEND_CORS_ORIGINS
+        value: "https://posture-check-app.vercel.app,http://localhost:3000,http://localhost:8080"
+      # 보안 설정
+      - key: SECRET_KEY
+        generateValue: true
+      - key: ALGORITHM
+        value: HS256
+      - key: ACCESS_TOKEN_EXPIRE_MINUTES
+        value: 30
+      - key: USE_LOCAL_CONFIG
+        value: false
