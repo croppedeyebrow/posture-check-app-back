@@ -1,1 +1,1 @@
-# Posture Check App Backend 
+# Posture Check App Backend - App Package 
