@@ -30,7 +30,7 @@ app = FastAPI(
 # 프론트엔드와 백엔드 간 통신을 위한 설정
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.BACKEND_CORS_ORIGINS,  # 허용할 도메인 목록
+    allow_origins=settings.cors_origins,  # 허용할 도메인 목록
     allow_credentials=True,  # 쿠키/인증 헤더 허용
     allow_methods=["*"],     # 모든 HTTP 메서드 허용
     allow_headers=["*"],     # 모든 헤더 허용

@@ -47,20 +47,14 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "30"))  # 토큰 만료 시간
     
     # ==================== CORS 설정 ====================
-    BACKEND_CORS_ORIGINS: List[str] = [
-        "https://posture-check-app.vercel.app",  # Vercel 프론트엔드
-        "http://localhost:3000",                 # 로컬 개발용
-        "http://localhost:8080",                 # 로컬 개발용
-        "*"                                      # 개발용 (모든 도메인 허용)
-    ]
+    BACKEND_CORS_ORIGINS: str = "*"  # 모든 도메인 허용 (간단하게 문자열로 설정)
     
-    @validator("BACKEND_CORS_ORIGINS", pre=True)
-    def assemble_cors_origins(cls, v):
-        if isinstance(v, str) and not v.startswith("["):
-            return [i.strip() for i in v.split(",")]
-        elif isinstance(v, (list, str)):
-            return v
-        raise ValueError(v)
+    @property
+    def cors_origins(self) -> List[str]:
+        """CORS origins를 리스트로 반환"""
+        if self.BACKEND_CORS_ORIGINS == "*":
+            return ["*"]
+        return [origin.strip() for origin in self.BACKEND_CORS_ORIGINS.split(",")]
     
     # ==================== 의학적 기준 설정 ====================
     # 실제 의료 기준을 반영한 자세 판단 기준값들
