@@ -1,0 +1,16 @@
+fastapi
+uvicorn
+pymysql
+python-multipart
+python-jose[cryptography]
+passlib[bcrypt]
+python-dotenv
+sqlalchemy
+alembic
+pydantic
+pydantic-settings
+# 추가 의존성
+email-validator
+bcrypt
+# 배포용 의존성
+gunicorn
