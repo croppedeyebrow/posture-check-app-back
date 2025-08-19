@@ -72,10 +72,16 @@ class Settings(BaseSettings):
         """
         # 1. DATABASE_URL 우선 사용 (Render 배포용)
         if self.DATABASE_URL:
+            # PyMySQL을 명시적으로 사용
+            if self.DATABASE_URL.startswith("mysql://"):
+                return self.DATABASE_URL.replace("mysql://", "mysql+pymysql://", 1)
             return self.DATABASE_URL
         
         # 2. MYSQL_PUBLIC_URL 사용 (Railway 직접 연결용)
         if self.MYSQL_PUBLIC_URL:
+            # PyMySQL을 명시적으로 사용
+            if self.MYSQL_PUBLIC_URL.startswith("mysql://"):
+                return self.MYSQL_PUBLIC_URL.replace("mysql://", "mysql+pymysql://", 1)
             return self.MYSQL_PUBLIC_URL
         
         # 3. 개별 설정으로 구성 (로컬 개발용)
