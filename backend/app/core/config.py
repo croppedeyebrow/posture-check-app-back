@@ -56,11 +56,6 @@ class Settings(BaseSettings):
     
     @validator("BACKEND_CORS_ORIGINS", pre=True)
     def assemble_cors_origins(cls, v):
-        """
-        CORS 설정 검증 및 변환
-        
-        문자열로 입력된 경우 쉼표로 분리하여 리스트로 변환
-        """
         if isinstance(v, str) and not v.startswith("["):
             return [i.strip() for i in v.split(",")]
         elif isinstance(v, (list, str)):
