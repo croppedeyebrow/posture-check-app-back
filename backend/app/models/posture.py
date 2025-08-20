@@ -38,32 +38,31 @@ class PostureRecord(Base):
     """
     자세 측정 기록 모델
     
-    13개 자세 지표의 개별 측정 데이터를 저장
+    프론트엔드에서 전송하는 13개 자세 지표 데이터를 저장
     """
     __tablename__ = "posture_records"
     
     id = Column(Integer, primary_key=True, index=True, comment="기록 고유 ID")
-    session_id = Column(Integer, ForeignKey("posture_sessions.id"), nullable=False, comment="세션 ID")
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False, comment="사용자 ID")
     
-    # ==================== 13개 자세 지표 ====================
+    # ==================== 프론트엔드 자세 지표 (13개) ====================
     # 1. 목 각도 (Neck Angle)
     neck_angle = Column(Float, nullable=True, comment="목 각도 (도)")
     
-    # 2. 어깨 각도 (Shoulder Angle)
-    shoulder_angle = Column(Float, nullable=True, comment="어깨 각도 (도)")
+    # 2. 어깨 기울기 (Shoulder Slope)
+    shoulder_slope = Column(Float, nullable=True, comment="어깨 기울기 (도)")
     
-    # 3. 등 각도 (Back Angle)
-    back_angle = Column(Float, nullable=True, comment="등 각도 (도)")
+    # 3. 머리 전방 이동 (Head Forward)
+    head_forward = Column(Float, nullable=True, comment="머리 전방 이동 (도)")
     
-    # 4. 엉덩이 각도 (Hip Angle)
-    hip_angle = Column(Float, nullable=True, comment="엉덩이 각도 (도)")
+    # 4. 어깨 높이 차이 (Shoulder Height Difference)
+    shoulder_height_diff = Column(Float, nullable=True, comment="어깨 높이 차이 (mm)")
     
-    # 5. 무릎 각도 (Knee Angle)
-    knee_angle = Column(Float, nullable=True, comment="무릎 각도 (도)")
+    # 5. 종합 점수 (Score)
+    score = Column(Float, nullable=True, comment="종합 자세 점수 (0-100)")
     
-    # 6. 발목 각도 (Ankle Angle)
-    ankle_angle = Column(Float, nullable=True, comment="발목 각도 (도)")
+    # 6. 경추 전만각 (Cervical Lordosis)
+    cervical_lordosis = Column(Float, nullable=True, comment="경추 전만각 (도)")
     
     # 7. 전방 머리 거리 (Forward Head Distance)
     forward_head_distance = Column(Float, nullable=True, comment="전방 머리 거리 (mm)")
@@ -71,33 +70,42 @@ class PostureRecord(Base):
     # 8. 머리 기울기 (Head Tilt)
     head_tilt = Column(Float, nullable=True, comment="머리 기울기 (도)")
     
-    # 9. 어깨 높이 차이 (Shoulder Height Difference)
-    shoulder_height_diff = Column(Float, nullable=True, comment="어깨 높이 차이 (mm)")
+    # 9. 왼쪽 어깨 높이 차이 (Left Shoulder Height Difference)
+    left_shoulder_height_diff = Column(Float, nullable=True, comment="왼쪽 어깨 높이 차이 (mm)")
     
-    # 10. 골반 기울기 (Pelvic Tilt)
-    pelvic_tilt = Column(Float, nullable=True, comment="골반 기울기 (도)")
+    # 10. 왼쪽 견갑골 날개 (Left Scapular Winging)
+    left_scapular_winging = Column(Float, nullable=True, comment="왼쪽 견갑골 날개 (도)")
     
-    # 11. 척추 곡률 (Spine Curvature)
-    spine_curvature = Column(Float, nullable=True, comment="척추 곡률 (도)")
+    # 11. 오른쪽 견갑골 날개 (Right Scapular Winging)
+    right_scapular_winging = Column(Float, nullable=True, comment="오른쪽 견갑골 날개 (도)")
     
-    # 12. 팔꿈치 각도 (Elbow Angle)
-    elbow_angle = Column(Float, nullable=True, comment="팔꿈치 각도 (도)")
+    # 12. 어깨 전방 이동 (Shoulder Forward Movement)
+    shoulder_forward_movement = Column(Float, nullable=True, comment="어깨 전방 이동 (도)")
     
-    # 13. 손목 각도 (Wrist Angle)
-    wrist_angle = Column(Float, nullable=True, comment="손목 각도 (도)")
+    # 13. 머리 회전 (Head Rotation)
+    head_rotation = Column(Float, nullable=True, comment="머리 회전 (도)")
     
     # ==================== 추가 정보 ====================
-    measurement_time = Column(DateTime(timezone=True), server_default=func.now(), comment="측정 시간")
-    image_url = Column(Text, nullable=True, comment="측정 시 이미지 URL")
-    notes = Column(Text, nullable=True, comment="측정 노트")
+    # 세션 정보
+    session_id = Column(String(100), nullable=True, comment="세션 ID")
+    device_info = Column(String(200), nullable=True, comment="기기 정보")
+    
+    # 문제점 정보
+    issues = Column(Text, nullable=True, comment="발견된 문제점들 (JSON)")
+    
+    # 정상 여부 판단
+    is_neck_angle_normal = Column(Boolean, nullable=True, comment="목 각도 정상 여부")
+    is_forward_head_normal = Column(Boolean, nullable=True, comment="전방 머리 정상 여부")
+    is_head_tilt_normal = Column(Boolean, nullable=True, comment="머리 기울기 정상 여부")
+    
+    # 시간 정보
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), comment="생성 시간")
     
     # 관계 설정
-    session = relationship("PostureSession", back_populates="records")
     user = relationship("User", back_populates="posture_records")
-    analysis = relationship("PostureAnalysis", back_populates="record", uselist=False)
     
     def __repr__(self):
-        return f"<PostureRecord(id={self.id}, session_id={self.session_id}, user_id={self.user_id})>"
+        return f"<PostureRecord(id={self.id}, user_id={self.user_id}, score={self.score})>"
 
 class PostureAnalysis(Base):
     """
