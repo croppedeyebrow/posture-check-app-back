@@ -30,9 +30,17 @@ app = FastAPI(
 # 프론트엔드와 백엔드 간 통신을 위한 설정
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.cors_origins,  # 허용할 도메인 목록
+    allow_origins=[
+        "http://localhost:3000",      # 로컬 개발용
+        "http://localhost:5173",      # Vite 기본 포트
+        "http://127.0.0.1:3000",      # 로컬 IP
+        "http://127.0.0.1:5173",      # Vite 로컬 IP
+        "https://posture-check-app.vercel.app",  # Vercel 배포
+        "https://posture-check-app-git-main-croppedeyebrow.vercel.app",  # Vercel 배포
+        "*"  # 모든 도메인 허용 (개발 중)
+    ],
     allow_credentials=True,  # 쿠키/인증 헤더 허용
-    allow_methods=["*"],     # 모든 HTTP 메서드 허용
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD"],  # 허용할 HTTP 메서드
     allow_headers=["*"],     # 모든 헤더 허용
 )
 
@@ -135,6 +143,7 @@ async def startup_event():
         print("   - 또는 DB_HOST, DB_PORT, DB_USER, DB_PASSWORD, DB_NAME 설정")
 
 @app.get("/")
+@app.head("/")
 def read_root():
     """
     루트 엔드포인트
@@ -149,6 +158,7 @@ def read_root():
     }
 
 @app.get("/health")
+@app.head("/health")
 def health_check():
     """
     헬스 체크 엔드포인트
@@ -184,6 +194,25 @@ def health_check():
     return {
         "status": "unhealthy",
         "message": "알 수 없는 오류가 발생했습니다."
+    }
+
+@app.get("/api/test")
+def api_test():
+    """
+    API 연결 테스트 엔드포인트
+    
+    프론트엔드에서 API 연결을 테스트하기 위한 간단한 엔드포인트
+    """
+    return {
+        "message": "API 연결 성공!",
+        "timestamp": "2024-08-20T05:15:00Z",
+        "endpoints": {
+            "health": "/health",
+            "docs": "/docs",
+            "api_v1": "/api/v1",
+            "users": "/api/v1/users",
+            "posture": "/api/v1/posture"
+        }
     }
 
 # Render 배포를 위한 포트 설정
