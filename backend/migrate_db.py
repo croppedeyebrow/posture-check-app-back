@@ -22,6 +22,7 @@ def migrate_posture_records():
     
     # 추가할 컬럼들
     new_columns = [
+        ('score', 'FLOAT'),  # 점수 컬럼 추가
         ('shoulder_slope', 'FLOAT'),
         ('head_forward', 'FLOAT'),
         ('cervical_lordosis', 'FLOAT'),
