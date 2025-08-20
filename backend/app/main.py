@@ -31,17 +31,38 @@ app = FastAPI(
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "http://localhost:3000",      # 로컬 개발용
-        "http://localhost:5173",      # Vite 기본 포트
-        "http://127.0.0.1:3000",      # 로컬 IP
-        "http://127.0.0.1:5173",      # Vite 로컬 IP
-        "https://posture-check-app.vercel.app",  # Vercel 배포
-        "https://posture-check-app-git-main-croppedeyebrow.vercel.app",  # Vercel 배포
-        "*"  # 모든 도메인 허용 (개발 중)
+        # 프로덕션 도메인
+        "https://posture-check-app.vercel.app",
+        "https://posture-check-app-git-main-croppedeyebrow.vercel.app",
+        
+        # 개발 환경
+        "http://localhost:3000",
+        "http://localhost:5173",
+        "http://127.0.0.1:3000",
+        "http://127.0.0.1:5173",
+        
+        # Vercel 프리뷰 도메인 (필요한 경우)
+        "https://posture-check-app-*.vercel.app",
+        
+        # 개발 중 임시 허용 (나중에 제거)
+        "http://localhost:8080",
+        "http://localhost:8000"
     ],
     allow_credentials=True,  # 쿠키/인증 헤더 허용
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD"],  # 허용할 HTTP 메서드
-    allow_headers=["*"],     # 모든 헤더 허용
+    allow_headers=[
+        "Accept",
+        "Accept-Language",
+        "Content-Language",
+        "Content-Type",
+        "Authorization",
+        "X-Requested-With",
+        "Origin",
+        "Access-Control-Request-Method",
+        "Access-Control-Request-Headers"
+    ],
+    expose_headers=["*"],  # 응답 헤더 노출
+    max_age=86400,  # CORS 프리플라이트 캐시 시간 (24시간)
 )
 
 # API 라우터 등록
@@ -214,6 +235,34 @@ def api_test():
             "posture": "/api/v1/posture"
         }
     }
+
+@app.get("/api/cors-test")
+def cors_test():
+    """
+    CORS 테스트 엔드포인트
+    
+    CORS 설정이 올바르게 작동하는지 확인하기 위한 엔드포인트
+    """
+    return {
+        "message": "CORS 테스트 성공!",
+        "cors_enabled": True,
+        "allowed_origins": [
+            "https://posture-check-app.vercel.app",
+            "https://posture-check-app-git-main-croppedeyebrow.vercel.app",
+            "http://localhost:3000",
+            "http://localhost:5173"
+        ],
+        "timestamp": "2024-08-20T06:10:00Z"
+    }
+
+@app.options("/api/cors-test")
+def cors_test_options():
+    """
+    CORS 프리플라이트 요청 처리
+    
+    브라우저의 CORS 프리플라이트 요청에 대한 응답
+    """
+    return {"message": "CORS preflight successful"}
 
 # Render 배포를 위한 포트 설정
 if __name__ == "__main__":
