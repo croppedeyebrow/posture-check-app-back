@@ -29,7 +29,6 @@ class PostureSession(Base):
     
     # 관계 설정
     user = relationship("User", back_populates="posture_sessions")
-    records = relationship("PostureRecord", back_populates="session")
     
     def __repr__(self):
         return f"<PostureSession(id={self.id}, user_id={self.user_id}, name='{self.session_name}')>"
@@ -141,7 +140,6 @@ class PostureAnalysis(Base):
     analysis_version = Column(String(20), nullable=True, comment="분석 알고리즘 버전")
     
     # 관계 설정
-    record = relationship("PostureRecord", back_populates="analysis")
     user = relationship("User", back_populates="posture_analyses")
     
     def __repr__(self):
