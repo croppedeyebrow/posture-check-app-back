@@ -40,16 +40,54 @@ app.add_middleware(
 # v1 API의 모든 엔드포인트를 /api/v1 경로에 등록
 app.include_router(api_router, prefix=settings.API_V1_STR)
 
-# 데이터베이스 연결 설정 (기존 PyMySQL 연결 유지)
-# Docker Compose 환경에서의 직접 연결을 위한 설정
-DB_CONFIG = {
-    'host': settings.DB_HOST,
-    'port': settings.DB_PORT,
-    'user': settings.DB_USER,
-    'password': settings.DB_PASSWORD,
-    'database': settings.DB_NAME,
-    'charset': 'utf8mb4'
-}
+# 데이터베이스 연결 설정 (Render 환경 대응)
+def get_db_config():
+    """
+    환경에 따른 데이터베이스 설정 반환
+    Render 환경에서는 DATABASE_URL 또는 MYSQL_PUBLIC_URL 사용
+    """
+    # Render 환경에서 DATABASE_URL이 있는 경우
+    if settings.DATABASE_URL:
+        # mysql://user:pass@host:port/db 형식에서 파싱
+        import re
+        pattern = r'mysql://([^:]+):([^@]+)@([^:]+):(\d+)/(.+)'
+        match = re.match(pattern, settings.DATABASE_URL)
+        if match:
+            user, password, host, port, database = match.groups()
+            return {
+                'host': host,
+                'port': int(port),
+                'user': user,
+                'password': password,
+                'database': database,
+                'charset': 'utf8mb4'
+            }
+    
+    # MYSQL_PUBLIC_URL이 있는 경우
+    if settings.MYSQL_PUBLIC_URL:
+        import re
+        pattern = r'mysql://([^:]+):([^@]+)@([^:]+):(\d+)/(.+)'
+        match = re.match(pattern, settings.MYSQL_PUBLIC_URL)
+        if match:
+            user, password, host, port, database = match.groups()
+            return {
+                'host': host,
+                'port': int(port),
+                'user': user,
+                'password': password,
+                'database': database,
+                'charset': 'utf8mb4'
+            }
+    
+    # 기본 설정 (로컬 개발용)
+    return {
+        'host': settings.DB_HOST,
+        'port': settings.DB_PORT,
+        'user': settings.DB_USER,
+        'password': settings.DB_PASSWORD,
+        'database': settings.DB_NAME,
+        'charset': 'utf8mb4'
+    }
 
 @contextmanager
 def get_db_connection():
@@ -61,7 +99,9 @@ def get_db_connection():
     """
     connection = None
     try:
-        connection = pymysql.connect(**DB_CONFIG)
+        db_config = get_db_config()
+        print(f"데이터베이스 연결 시도: {db_config['host']}:{db_config['port']}")
+        connection = pymysql.connect(**db_config)
         yield connection
     except Exception as e:
         print(f"데이터베이스 연결 오류: {e}")
@@ -79,12 +119,20 @@ async def startup_event():
     - 초기 설정 및 로그 출력
     """
     print("🚀 Posture Check App Backend 시작 중...")
+    
+    # 데이터베이스 설정 정보 출력
+    db_config = get_db_config()
+    print(f"📊 데이터베이스 설정: {db_config['host']}:{db_config['port']}")
+    
     try:
         # SQLAlchemy를 사용한 데이터베이스 테이블 생성
         init_db()
         print("✅ 데이터베이스 테이블 생성 완료")
     except Exception as e:
         print(f"❌ 데이터베이스 초기화 실패: {e}")
+        print("💡 환경 변수 설정을 확인해주세요:")
+        print("   - DATABASE_URL 또는 MYSQL_PUBLIC_URL 설정")
+        print("   - 또는 DB_HOST, DB_PORT, DB_USER, DB_PASSWORD, DB_NAME 설정")
 
 @app.get("/")
 def read_root():
@@ -114,15 +162,21 @@ def health_check():
                 cursor.execute("SELECT 1")
                 result = cursor.fetchone()
                 if result[0] == 1:
+                    db_config = get_db_config()
                     return {
                         "status": "healthy",
                         "database": "connected",
+                        "database_host": db_config['host'],
+                        "database_port": db_config['port'],
                         "message": "애플리케이션이 정상적으로 작동 중입니다."
                     }
     except Exception as e:
+        db_config = get_db_config()
         return {
             "status": "unhealthy",
             "database": "disconnected",
+            "database_host": db_config['host'],
+            "database_port": db_config['port'],
             "error": str(e),
             "message": "데이터베이스 연결에 문제가 있습니다."
         }
