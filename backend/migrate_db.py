@@ -46,6 +46,28 @@ def main():
             else:
                 print("ℹ️ created_at 컬럼이 이미 존재합니다")
         
+        # session_id 컬럼 타입 확인 및 수정
+        print("🔧 session_id 컬럼 타입 확인 및 수정 중...")
+        with engine.connect() as conn:
+            result = conn.execute(text("SHOW COLUMNS FROM posture_records LIKE 'session_id'"))
+            session_id_info = result.fetchone()
+            if session_id_info:
+                column_type = session_id_info[1]
+                print(f"현재 session_id 타입: {column_type}")
+                
+                # INTEGER 타입이면 VARCHAR로 변경
+                if 'int' in column_type.lower():
+                    print("🔄 session_id 컬럼을 VARCHAR로 변경 중...")
+                    conn.execute(text("""
+                        ALTER TABLE posture_records 
+                        MODIFY COLUMN session_id VARCHAR(100) 
+                        COMMENT '세션 ID'
+                    """))
+                    conn.commit()
+                    print("✅ session_id 컬럼 타입 변경 완료")
+                else:
+                    print("ℹ️ session_id 컬럼이 이미 올바른 타입입니다")
+        
         # 생성된 테이블 확인
         print("\n📋 생성된 테이블 목록:")
         with engine.connect() as conn:
