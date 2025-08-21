@@ -25,7 +25,7 @@ class PostureRecordBase(BaseModel):
     issues: Optional[str] = Field(default="[]", description="발견된 문제점들 (JSON 문자열)")
     
     # 메타데이터
-    session_id: str = Field(..., description="세션 ID")
+    session_id: int = Field(..., description="세션 ID")
     device_info: Optional[str] = Field(None, description="기기 정보")
 
 class PostureRecordCreate(PostureRecordBase):
@@ -57,7 +57,7 @@ class PostureDataSave(BaseModel):
     shoulderForwardMovement: Optional[float] = Field(0.0, description="어깨 전방 이동")
     issues: Optional[List[dict]] = Field(default=[], description="발견된 문제점들")
     timestamp: Optional[datetime] = Field(default_factory=datetime.now, description="측정 시간")
-    sessionId: Optional[str] = Field(None, description="세션 ID")
+    sessionId: Optional[int] = Field(None, description="세션 ID")
     deviceInfo: Optional[str] = Field(None, description="기기 정보")
     
     # 문자열을 숫자로 자동 변환하는 validator 추가
@@ -94,7 +94,7 @@ class PostureDataSave(BaseModel):
 
 class PostureAnalysisConfig(BaseModel):
     user_id: int = Field(..., description="사용자 ID")
-    session_id: Optional[str] = Field(None, description="세션 ID")
+    session_id: Optional[int] = Field(None, description="세션 ID")
     device_info: Optional[str] = Field(None, description="기기 정보")
     analysis_interval: Optional[int] = Field(5, description="분석 간격 (초)")
 
