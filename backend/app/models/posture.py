@@ -86,7 +86,7 @@ class PostureRecord(Base):
     
     # ==================== 추가 정보 ====================
     # 세션 정보
-    session_id = Column(BigInteger, nullable=True, comment="세션 ID")
+    session_id = Column(String(50), nullable=True, comment="세션 ID")
     device_info = Column(String(200), nullable=True, comment="기기 정보")
     
     # 문제점 정보
