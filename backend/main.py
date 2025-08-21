@@ -16,6 +16,9 @@ sys.path.insert(0, current_dir)
 # 로컬 개발 환경에서는 로컬 설정 사용
 if not os.environ.get("RENDER") and not os.environ.get("RAILWAY"):
     os.environ["USE_LOCAL_CONFIG"] = "true"
+    print("🔧 로컬 환경 감지: USE_LOCAL_CONFIG=true 설정")
+else:
+    print("🔧 배포 환경 감지: USE_LOCAL_CONFIG=false 설정")
 
 # FastAPI 앱 import
 from app.main import app

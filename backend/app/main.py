@@ -77,9 +77,12 @@ def get_db_config():
     """
     # USE_LOCAL_CONFIG 환경 변수로 로컬/배포 환경 구분
     use_local_config = os.environ.get("USE_LOCAL_CONFIG", "false").lower() == "true"
+    print(f"🔧 USE_LOCAL_CONFIG: {os.environ.get('USE_LOCAL_CONFIG')}")
+    print(f"🔧 use_local_config: {use_local_config}")
     
     if use_local_config:
         # 로컬 환경에서는 기본 설정 사용
+        print(f"🔧 로컬 설정 사용: {settings.DB_USER}@{settings.DB_HOST}:{settings.DB_PORT}")
         return {
             'host': settings.DB_HOST,
             'port': settings.DB_PORT,
