@@ -24,51 +24,31 @@ def main():
             result = conn.execute(text("SELECT 1"))
             print("✅ 데이터베이스 연결 성공")
         
-        # 테이블 생성
-        print("🔄 테이블 생성 중...")
-        init_db()
-        print("✅ 테이블 생성 완료")
-        
-        # created_at 컬럼 추가 (기존 테이블에 없으면)
-        print("🔧 created_at 컬럼 확인 및 추가 중...")
+        # 기존 테이블 삭제 후 새로 생성 (깨끗한 상태로 시작)
+        print("🔄 기존 테이블 삭제 중...")
         with engine.connect() as conn:
-            # created_at 컬럼 존재 여부 확인
-            result = conn.execute(text("SHOW COLUMNS FROM posture_records LIKE 'created_at'"))
-            if not result.fetchall():
-                # created_at 컬럼 추가
-                conn.execute(text("""
-                    ALTER TABLE posture_records 
-                    ADD COLUMN created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP 
-                    COMMENT '생성 시간'
-                """))
+            try:
+                conn.execute(text("DROP TABLE IF EXISTS posture_records"))
+                conn.execute(text("DROP TABLE IF EXISTS posture_sessions"))
+                conn.execute(text("DROP TABLE IF EXISTS posture_analyses"))
                 conn.commit()
-                print("✅ created_at 컬럼 추가 완료")
-            else:
-                print("ℹ️ created_at 컬럼이 이미 존재합니다")
+                print("✅ 기존 테이블 삭제 완료")
+            except Exception as e:
+                print(f"ℹ️ 테이블 삭제 중 오류 (무시): {e}")
         
-        # session_id 컬럼 타입 확인 및 수정
-        print("🔧 session_id 컬럼 타입 확인 및 수정 중...")
+        # 테이블 새로 생성
+        print("🔄 테이블 새로 생성 중...")
+        init_db()
+        print("✅ 테이블 새로 생성 완료")
+        
+        # 새로 생성된 테이블 구조 확인
+        print("🔧 새로 생성된 테이블 구조 확인 중...")
         with engine.connect() as conn:
-            result = conn.execute(text("SHOW COLUMNS FROM posture_records LIKE 'session_id'"))
-            session_id_info = result.fetchone()
-            if session_id_info:
-                column_type = session_id_info[1]
-                print(f"현재 session_id 타입: {column_type}")
-                
-                # INT 타입이면 BIGINT로 변경 (타임스탬프 값이 INT 범위를 초과할 수 있음)
-                if 'int' in column_type.lower() and 'bigint' not in column_type.lower():
-                    print("🔄 session_id 컬럼을 BIGINT로 변경 중...")
-                    conn.execute(text("""
-                        ALTER TABLE posture_records 
-                        MODIFY COLUMN session_id BIGINT 
-                        COMMENT '세션 ID'
-                    """))
-                    conn.commit()
-                    print("✅ session_id 컬럼 타입 변경 완료")
-                else:
-                    print("ℹ️ session_id 컬럼이 이미 올바른 타입입니다")
-            else:
-                print("ℹ️ session_id 컬럼이 없습니다 (새 테이블 생성 시 BIGINT로 생성됨)")
+            result = conn.execute(text("DESCRIBE posture_records"))
+            columns = result.fetchall()
+            print("posture_records 테이블 컬럼:")
+            for col in columns:
+                print(f"  - {col[0]}: {col[1]}")
         
         # 생성된 테이블 확인
         print("\n📋 생성된 테이블 목록:")
