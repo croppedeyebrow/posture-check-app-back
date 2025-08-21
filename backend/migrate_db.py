@@ -36,9 +36,38 @@ def main():
             except Exception as e:
                 print(f"ℹ️ 테이블 삭제 중 오류 (무시): {e}")
         
-        # 테이블 새로 생성
+        # 테이블 새로 생성 (직접 SQL로 생성하여 최신 스키마 적용)
         print("🔄 테이블 새로 생성 중...")
-        init_db()
+        with engine.connect() as conn:
+            # posture_records 테이블 생성 (session_id를 VARCHAR(50)으로)
+            conn.execute(text("""
+                CREATE TABLE IF NOT EXISTS posture_records (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    user_id INT NOT NULL,
+                    neck_angle FLOAT,
+                    shoulder_slope FLOAT,
+                    head_forward FLOAT,
+                    shoulder_height_diff FLOAT,
+                    score FLOAT,
+                    cervical_lordosis FLOAT,
+                    forward_head_distance FLOAT,
+                    head_tilt FLOAT,
+                    left_shoulder_height_diff FLOAT,
+                    left_scapular_winging FLOAT,
+                    right_scapular_winging FLOAT,
+                    shoulder_forward_movement FLOAT,
+                    head_rotation FLOAT,
+                    session_id VARCHAR(50),
+                    device_info VARCHAR(200),
+                    issues TEXT,
+                    is_neck_angle_normal BOOLEAN,
+                    is_forward_head_normal BOOLEAN,
+                    is_head_tilt_normal BOOLEAN,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (user_id) REFERENCES users(id)
+                )
+            """))
+            conn.commit()
         print("✅ 테이블 새로 생성 완료")
         
         # 새로 생성된 테이블 구조 확인
