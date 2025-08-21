@@ -75,8 +75,11 @@ def get_db_config():
     """
     환경에 따른 데이터베이스 설정 반환
     """
-    # 로컬 환경에서는 기본 설정 사용
-    if hasattr(settings, 'DB_HOST'):
+    # USE_LOCAL_CONFIG 환경 변수로 로컬/배포 환경 구분
+    use_local_config = os.environ.get("USE_LOCAL_CONFIG", "false").lower() == "true"
+    
+    if use_local_config:
+        # 로컬 환경에서는 기본 설정 사용
         return {
             'host': settings.DB_HOST,
             'port': settings.DB_PORT,
