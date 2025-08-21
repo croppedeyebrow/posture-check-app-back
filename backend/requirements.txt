@@ -6,7 +6,7 @@ python-jose[cryptography]
 passlib[bcrypt]
 python-dotenv
 sqlalchemy
-alembic
+alembic==1.13.1
 pydantic
 pydantic-settings
 # 추가 의존성

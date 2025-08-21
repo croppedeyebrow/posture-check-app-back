@@ -37,7 +37,7 @@ class PostureRecord(PostureRecordBase):
     is_neck_angle_normal: Optional[bool] = None
     is_forward_head_normal: Optional[bool] = None
     is_head_tilt_normal: Optional[bool] = None
-    created_at: datetime
+    created_at: Optional[datetime] = None
     
     class Config:
         from_attributes = True

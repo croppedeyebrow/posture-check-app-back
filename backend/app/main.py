@@ -46,7 +46,8 @@ app.add_middleware(
         
         # 개발 중 임시 허용 (나중에 제거)
         "http://localhost:8080",
-        "http://localhost:8000"
+        "http://localhost:8000",
+        "http://localhost:8001"
     ],
     allow_credentials=True,  # 쿠키/인증 헤더 허용
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD"],  # 허용할 HTTP 메서드
@@ -69,15 +70,24 @@ app.add_middleware(
 # v1 API의 모든 엔드포인트를 /api/v1 경로에 등록
 app.include_router(api_router, prefix=settings.API_V1_STR)
 
-# 데이터베이스 연결 설정 (Render 환경 대응)
+# 데이터베이스 연결 설정 (환경별 대응)
 def get_db_config():
     """
     환경에 따른 데이터베이스 설정 반환
-    Render 환경에서는 DATABASE_URL 또는 MYSQL_PUBLIC_URL 사용
     """
-    # Render 환경에서 DATABASE_URL이 있는 경우
-    if settings.DATABASE_URL:
-        # mysql://user:pass@host:port/db 형식에서 파싱
+    # 로컬 환경에서는 기본 설정 사용
+    if hasattr(settings, 'DB_HOST'):
+        return {
+            'host': settings.DB_HOST,
+            'port': settings.DB_PORT,
+            'user': settings.DB_USER,
+            'password': settings.DB_PASSWORD,
+            'database': settings.DB_NAME,
+            'charset': 'utf8mb4'
+        }
+    
+    # 배포 환경에서 DATABASE_URL이 있는 경우
+    if hasattr(settings, 'DATABASE_URL') and settings.DATABASE_URL:
         import re
         pattern = r'mysql://([^:]+):([^@]+)@([^:]+):(\d+)/(.+)'
         match = re.match(pattern, settings.DATABASE_URL)
@@ -92,8 +102,8 @@ def get_db_config():
                 'charset': 'utf8mb4'
             }
     
-    # MYSQL_PUBLIC_URL이 있는 경우
-    if settings.MYSQL_PUBLIC_URL:
+    # 배포 환경에서 MYSQL_PUBLIC_URL이 있는 경우
+    if hasattr(settings, 'MYSQL_PUBLIC_URL') and settings.MYSQL_PUBLIC_URL:
         import re
         pattern = r'mysql://([^:]+):([^@]+)@([^:]+):(\d+)/(.+)'
         match = re.match(pattern, settings.MYSQL_PUBLIC_URL)

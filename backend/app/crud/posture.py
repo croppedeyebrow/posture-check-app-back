@@ -44,7 +44,8 @@ class CRUDPostureRecord:
             device_info=obj_in.device_info,
             is_neck_angle_normal=is_neck_angle_normal,
             is_forward_head_normal=is_forward_head_normal,
-            is_head_tilt_normal=is_head_tilt_normal
+            is_head_tilt_normal=is_head_tilt_normal,
+            created_at=datetime.now()  # 명시적으로 생성 시간 설정
         )
         db.add(db_obj)
         db.commit()

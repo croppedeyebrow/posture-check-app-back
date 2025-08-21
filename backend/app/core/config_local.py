@@ -53,6 +53,12 @@ class LocalSettings(BaseSettings):
     HEAD_TILT_NORMAL_MIN: float = -15.0
     HEAD_TILT_NORMAL_MAX: float = 15.0
     
+    def get_database_url(self) -> str:
+        """
+        로컬 데이터베이스 연결 URL 반환
+        """
+        return f"mysql+pymysql://{self.DB_USER}:{self.DB_PASSWORD}@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}"
+    
     class Config:
         case_sensitive = True
         env_file = ".env.local"

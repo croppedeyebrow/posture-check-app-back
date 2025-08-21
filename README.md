@@ -91,8 +91,8 @@
 
 ### Infrastructure
 
-- **Docker**: 컨테이너화
-- **Docker Compose**: 멀티 컨테이너 오케스트레이션
+- **MySQL**: 로컬 데이터베이스
+- **SQLAlchemy**: ORM 및 데이터베이스 관리
 
 ### Development Tools
 
@@ -210,7 +210,8 @@ posture_app_back/
 
 ### 1. 사전 요구사항
 
-- Docker & Docker Compose
+- Python 3.11+
+- MySQL 8.0+
 - Git
 
 ### 2. 프로젝트 클론
@@ -220,27 +221,7 @@ git clone <repository-url>
 cd posture_app_back
 ```
 
-### 3. Docker Compose로 실행 (권장)
-
-```bash
-# 전체 서비스 실행
-docker-compose up --build
-
-# 백그라운드 실행
-docker-compose up -d --build
-```
-
-### 4. 서비스 확인
-
-```bash
-# 서비스 상태 확인
-docker-compose ps
-
-# 로그 확인
-docker-compose logs -f backend
-```
-
-### 5. 로컬 개발 환경 (선택사항)
+### 3. 로컬 개발 환경 설정
 
 ```bash
 # 백엔드 디렉토리로 이동
@@ -257,10 +238,31 @@ source venv/bin/activate
 
 # 의존성 설치
 pip install -r requirements.txt
+```
 
-# 애플리케이션 실행
+### 4. 데이터베이스 설정
+
+MySQL에서 데이터베이스 생성:
+
+```sql
+CREATE DATABASE posture_app_local;
+```
+
+### 5. 애플리케이션 실행
+
+```bash
+# 단순 실행
+python main.py
+
+# 또는 직접 uvicorn 사용
 uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
+
+### 6. 서비스 확인
+
+- **API 문서**: http://localhost:8000/docs
+- **헬스 체크**: http://localhost:8000/health
+- **ReDoc 문서**: http://localhost:8000/redoc
 
 ## 📚 API 문서
 

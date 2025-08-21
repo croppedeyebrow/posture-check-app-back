@@ -4,6 +4,7 @@ from typing import List, Optional
 from datetime import datetime, timedelta
 import json
 import uuid
+import time
 
 from ....db.session import get_db
 from ....schemas.posture import (
@@ -61,7 +62,7 @@ def save_posture_data(
             shoulder_forward_movement=posture_data.shoulderForwardMovement,
             head_rotation=posture_data.headRotation,
             issues=issues_json,
-            session_id=posture_data.sessionId or f"session_{uuid.uuid4().hex[:8]}",
+            session_id=posture_data.sessionId or f"session_{int(time.time())}",
             device_info=posture_data.deviceInfo
         )
         
@@ -87,7 +88,7 @@ def start_posture_analysis(
 ):
     """실시간 자세 분석 세션 시작"""
     try:
-        session_id = config.session_id or f"analysis_{uuid.uuid4().hex[:8]}"
+        session_id = config.session_id or f"session_{int(time.time())}"
         
         # 세션 정보 생성
         session_info = PostureAnalysisSession(
