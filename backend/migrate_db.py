@@ -46,17 +46,29 @@ def main():
             else:
                 print("ℹ️ created_at 컬럼이 이미 존재합니다")
         
-        # session_id 컬럼 타입 확인
-        print("🔧 session_id 컬럼 타입 확인 중...")
+        # session_id 컬럼 타입 확인 및 수정
+        print("🔧 session_id 컬럼 타입 확인 및 수정 중...")
         with engine.connect() as conn:
             result = conn.execute(text("SHOW COLUMNS FROM posture_records LIKE 'session_id'"))
             session_id_info = result.fetchone()
             if session_id_info:
                 column_type = session_id_info[1]
                 print(f"현재 session_id 타입: {column_type}")
-                print("ℹ️ session_id 컬럼이 이미 존재합니다")
+                
+                # INT 타입이면 BIGINT로 변경 (타임스탬프 값이 INT 범위를 초과할 수 있음)
+                if 'int' in column_type.lower() and 'bigint' not in column_type.lower():
+                    print("🔄 session_id 컬럼을 BIGINT로 변경 중...")
+                    conn.execute(text("""
+                        ALTER TABLE posture_records 
+                        MODIFY COLUMN session_id BIGINT 
+                        COMMENT '세션 ID'
+                    """))
+                    conn.commit()
+                    print("✅ session_id 컬럼 타입 변경 완료")
+                else:
+                    print("ℹ️ session_id 컬럼이 이미 올바른 타입입니다")
             else:
-                print("ℹ️ session_id 컬럼이 없습니다 (새 테이블 생성 시 INT로 생성됨)")
+                print("ℹ️ session_id 컬럼이 없습니다 (새 테이블 생성 시 BIGINT로 생성됨)")
         
         # 생성된 테이블 확인
         print("\n📋 생성된 테이블 목록:")

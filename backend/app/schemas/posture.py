@@ -25,7 +25,7 @@ class PostureRecordBase(BaseModel):
     issues: Optional[str] = Field(default="[]", description="발견된 문제점들 (JSON 문자열)")
     
     # 메타데이터
-    session_id: int = Field(..., description="세션 ID")
+    session_id: int = Field(..., description="세션 ID")  # Python int는 자동으로 BigInteger 처리
     device_info: Optional[str] = Field(None, description="기기 정보")
 
 class PostureRecordCreate(PostureRecordBase):

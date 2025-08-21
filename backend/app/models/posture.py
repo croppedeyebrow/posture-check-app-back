@@ -7,7 +7,7 @@ Posture Check App Backend - 자세 모델
 - PostureAnalysis: 자세 분석 결과 및 통계
 """
 
-from sqlalchemy import Column, Integer, String, Float, DateTime, Boolean, Text, ForeignKey, JSON
+from sqlalchemy import Column, Integer, BigInteger, String, Float, DateTime, Boolean, Text, ForeignKey, JSON
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
 from ..db.session import Base
@@ -86,7 +86,7 @@ class PostureRecord(Base):
     
     # ==================== 추가 정보 ====================
     # 세션 정보
-    session_id = Column(Integer, nullable=True, comment="세션 ID")
+    session_id = Column(BigInteger, nullable=True, comment="세션 ID")
     device_info = Column(String(200), nullable=True, comment="기기 정보")
     
     # 문제점 정보
