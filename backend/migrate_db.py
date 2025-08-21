@@ -28,9 +28,10 @@ def main():
         print("🔄 기존 테이블 삭제 중...")
         with engine.connect() as conn:
             try:
+                # 외래키 제약조건이 있는 테이블들을 먼저 삭제
+                conn.execute(text("DROP TABLE IF EXISTS posture_analyses"))
                 conn.execute(text("DROP TABLE IF EXISTS posture_records"))
                 conn.execute(text("DROP TABLE IF EXISTS posture_sessions"))
-                conn.execute(text("DROP TABLE IF EXISTS posture_analyses"))
                 conn.commit()
                 print("✅ 기존 테이블 삭제 완료")
             except Exception as e:
@@ -41,7 +42,7 @@ def main():
         with engine.connect() as conn:
             # posture_records 테이블 생성 (session_id를 VARCHAR(50)으로)
             conn.execute(text("""
-                CREATE TABLE IF NOT EXISTS posture_records (
+                CREATE TABLE posture_records (
                     id INT AUTO_INCREMENT PRIMARY KEY,
                     user_id INT NOT NULL,
                     neck_angle FLOAT,
