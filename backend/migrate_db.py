@@ -29,6 +29,23 @@ def main():
         init_db()
         print("✅ 테이블 생성 완료")
         
+        # created_at 컬럼 추가 (기존 테이블에 없으면)
+        print("🔧 created_at 컬럼 확인 및 추가 중...")
+        with engine.connect() as conn:
+            # created_at 컬럼 존재 여부 확인
+            result = conn.execute(text("SHOW COLUMNS FROM posture_records LIKE 'created_at'"))
+            if not result.fetchall():
+                # created_at 컬럼 추가
+                conn.execute(text("""
+                    ALTER TABLE posture_records 
+                    ADD COLUMN created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP 
+                    COMMENT '생성 시간'
+                """))
+                conn.commit()
+                print("✅ created_at 컬럼 추가 완료")
+            else:
+                print("ℹ️ created_at 컬럼이 이미 존재합니다")
+        
         # 생성된 테이블 확인
         print("\n📋 생성된 테이블 목록:")
         with engine.connect() as conn:
