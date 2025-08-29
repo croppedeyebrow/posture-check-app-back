@@ -62,21 +62,28 @@ def create_user(
 ):
     """새 사용자 등록"""
     try:
+        print(f"🔍 회원가입 시도: username={user_in.username}, email={user_in.email}")
+        
         # 이메일 중복 확인
         existing_user = user_crud.get_by_email(db, email=user_in.email)
         if existing_user:
+            print(f"❌ 이메일 중복: {user_in.email}")
             raise HTTPException(status_code=400, detail="이미 등록된 이메일입니다")
         
         # 사용자명 중복 확인
         existing_username = user_crud.get_by_username(db, username=user_in.username)
         if existing_username:
+            print(f"❌ 사용자명 중복: {user_in.username}")
             raise HTTPException(status_code=400, detail="이미 사용 중인 사용자명입니다")
         
+        print(f"✅ 중복 확인 완료, 사용자 생성 중...")
         user = user_crud.create(db, obj_in=user_in)
+        print(f"✅ 사용자 생성 완료: ID={user.id}")
         return user
     except HTTPException:
         raise
     except Exception as e:
+        print(f"❌ 회원가입 실패: {str(e)}")
         raise HTTPException(status_code=500, detail=f"사용자 등록 실패: {str(e)}")
 
 @router.get("/me", response_model=User)

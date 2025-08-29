@@ -28,23 +28,28 @@ def save_posture_data(
     try:
         print(f"받은 데이터: {posture_data}")
         
-        # issues를 JSON 문자열로 변환 (dict 리스트를 문자열 리스트로 변환)
-        issues_list = []
+        # issues를 읽기 쉬운 문자열로 변환
+        issues_text = ""
         if posture_data.issues:
+            issue_messages = []
             for issue in posture_data.issues:
                 if isinstance(issue, dict):
-                    # dict에서 필요한 정보 추출 (예: message, type 등)
-                    if 'message' in issue:
-                        issues_list.append(issue['message'])
+                    # dict에서 문제점 메시지 추출
+                    if 'problem' in issue:
+                        issue_messages.append(issue['problem'])
+                    elif 'message' in issue:
+                        issue_messages.append(issue['message'])
                     elif 'type' in issue:
-                        issues_list.append(issue['type'])
+                        issue_messages.append(issue['type'])
                     else:
-                        issues_list.append(str(issue))
+                        issue_messages.append(str(issue))
                 else:
-                    issues_list.append(str(issue))
-        issues_json = json.dumps(issues_list)
+                    issue_messages.append(str(issue))
+            
+            # 여러 문제점을 쉼표로 구분하여 하나의 문자열로 만들기
+            issues_text = ", ".join(issue_messages)
         
-        print(f"변환된 issues: {issues_json}")
+        print(f"변환된 issues: {issues_text}")
         
         # PostureRecordCreate 형태로 변환 (camelCase에서 snake_case로 변환)
         record_data = PostureRecordCreate(
@@ -61,7 +66,7 @@ def save_posture_data(
             right_scapular_winging=0.0,     # 기본값 설정
             shoulder_forward_movement=posture_data.shoulderForwardMovement,
             head_rotation=posture_data.headRotation,
-            issues=issues_json,
+            issues=issues_text,
             session_id=posture_data.sessionId or str(int(time.time())),
             device_info=posture_data.deviceInfo
         )

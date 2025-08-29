@@ -90,7 +90,7 @@ class PostureRecord(Base):
     device_info = Column(String(200), nullable=True, comment="기기 정보")
     
     # 문제점 정보
-    issues = Column(Text, nullable=True, comment="발견된 문제점들 (JSON)")
+    issues = Column(Text, nullable=True, comment="발견된 문제점들 (쉼표로 구분된 문자열)")
     
     # 정상 여부 판단
     is_neck_angle_normal = Column(Boolean, nullable=True, comment="목 각도 정상 여부")

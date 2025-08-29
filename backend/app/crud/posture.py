@@ -18,11 +18,8 @@ class CRUDPostureRecord:
             settings.HEAD_TILT_NORMAL_MIN <= obj_in.head_tilt <= settings.HEAD_TILT_NORMAL_MAX
         )
         
-        # issues가 문자열이 아닌 경우 JSON으로 변환
-        issues_data = obj_in.issues
-        if isinstance(issues_data, list):
-            import json
-            issues_data = json.dumps(issues_data)
+        # issues는 이미 문자열로 전달됨 (API에서 변환됨)
+        issues_data = obj_in.issues or ""
         
         db_obj = PostureRecord(
             user_id=user_id,

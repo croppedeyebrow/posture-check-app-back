@@ -22,7 +22,7 @@ class PostureRecordBase(BaseModel):
     
     # 프론트엔드 추가 필드
     head_rotation: float = Field(..., description="머리 회전")
-    issues: Optional[str] = Field(default="[]", description="발견된 문제점들 (JSON 문자열)")
+    issues: Optional[str] = Field(default="", description="발견된 문제점들 (쉼표로 구분된 문자열)")
     
     # 메타데이터
     session_id: str = Field(..., description="세션 ID")  # Python int는 자동으로 BigInteger 처리
