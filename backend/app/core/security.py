@@ -28,6 +28,36 @@ def create_access_token(
     encoded_jwt = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
     return encoded_jwt
 
+def create_password_reset_token(
+    email: str, expires_delta: timedelta = None
+) -> str:
+    """비밀번호 재설정 토큰 생성"""
+    if expires_delta:
+        expire = datetime.utcnow() + expires_delta
+    else:
+        expire = datetime.utcnow() + timedelta(hours=1)  # 1시간 유효
+    
+    to_encode = {
+        "exp": expire, 
+        "sub": email, 
+        "type": "password_reset"
+    }
+    encoded_jwt = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
+    return encoded_jwt
+
+def verify_password_reset_token(token: str) -> Optional[str]:
+    """비밀번호 재설정 토큰 검증"""
+    try:
+        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+        email: str = payload.get("sub")
+        token_type: str = payload.get("type")
+        
+        if email is None or token_type != "password_reset":
+            return None
+        return email
+    except jwt.JWTError:
+        return None
+
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     """비밀번호 검증"""
     return pwd_context.verify(plain_password, hashed_password)

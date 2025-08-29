@@ -7,7 +7,7 @@ from pydantic import BaseModel
 from ....db.session import get_db
 from ....schemas.user import UserCreate, User, UserUpdate
 from ....crud.user import user as user_crud
-from ....core.security import create_access_token, get_current_user, get_password_hash
+from ....core.security import create_access_token, get_current_user, get_password_hash, verify_password, create_password_reset_token, verify_password_reset_token
 from ....core.config import settings
 
 router = APIRouter()
@@ -22,6 +22,23 @@ class Token(BaseModel):
     token_type: str
     user_id: int
     username: str
+
+class PasswordResetRequest(BaseModel):
+    email: str
+
+class PasswordResetResponse(BaseModel):
+    email: str
+    message: str
+    reset_token: str
+
+class PasswordResetConfirm(BaseModel):
+    email: str
+    reset_token: str
+    new_password: str
+
+class PasswordResetConfirmResponse(BaseModel):
+    email: str
+    message: str
 
 @router.post("/login", response_model=Token)
 def login(
@@ -61,6 +78,86 @@ def login(
     except Exception as e:
         print(f"❌ 로그인 오류: {str(e)}")
         raise HTTPException(status_code=500, detail=f"로그인 실패: {str(e)}")
+
+@router.post("/forgot-password", response_model=PasswordResetResponse)
+def forgot_password(
+    password_reset: PasswordResetRequest,
+    db: Session = Depends(get_db)
+):
+    """비밀번호 찾기 - 재설정 토큰 생성"""
+    try:
+        print(f"🔍 비밀번호 찾기 요청: email={password_reset.email}")
+        
+        # 이메일로 사용자 찾기
+        user = user_crud.get_by_email(db, email=password_reset.email)
+        if not user:
+            print(f"❌ 사용자를 찾을 수 없음: {password_reset.email}")
+            # 보안상 사용자가 존재하지 않아도 같은 메시지 반환
+            return PasswordResetResponse(
+                email=password_reset.email,
+                message="비밀번호 재설정 링크가 이메일로 전송되었습니다. (존재하지 않는 이메일인 경우 무시하세요)",
+                reset_token=""
+            )
+        
+        print(f"✅ 사용자 발견: username={user.username}, user_id={user.id}")
+        
+        # 비밀번호 재설정 토큰 생성 (1시간 유효)
+        reset_token = create_password_reset_token(email=password_reset.email)
+        
+        print(f"✅ 비밀번호 재설정 토큰 생성: {reset_token[:20]}...")
+        
+        # 실제 프로덕션에서는 여기서 이메일 발송 로직 추가
+        # send_password_reset_email(user.email, reset_token)
+        
+        return PasswordResetResponse(
+            email=password_reset.email,
+            message="비밀번호 재설정 링크가 이메일로 전송되었습니다. (개발환경에서는 토큰을 직접 확인하세요)",
+            reset_token=reset_token  # 개발환경에서만 토큰 반환
+        )
+        
+    except Exception as e:
+        print(f"❌ 비밀번호 찾기 오류: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"비밀번호 찾기 실패: {str(e)}")
+
+@router.post("/reset-password", response_model=PasswordResetConfirmResponse)
+def reset_password(
+    password_reset: PasswordResetConfirm,
+    db: Session = Depends(get_db)
+):
+    """비밀번호 재설정"""
+    try:
+        print(f"🔍 비밀번호 재설정 시도: email={password_reset.email}")
+        
+        # 토큰 검증
+        email_from_token = verify_password_reset_token(password_reset.reset_token)
+        if not email_from_token or email_from_token != password_reset.email:
+            print(f"❌ 유효하지 않은 토큰: {password_reset.email}")
+            raise HTTPException(status_code=400, detail="유효하지 않은 재설정 토큰입니다")
+        
+        # 사용자 찾기
+        user = user_crud.get_by_email(db, email=password_reset.email)
+        if not user:
+            print(f"❌ 사용자를 찾을 수 없음: {password_reset.email}")
+            raise HTTPException(status_code=404, detail="사용자를 찾을 수 없습니다")
+        
+        print(f"✅ 사용자 발견: username={user.username}, user_id={user.id}")
+        
+        # 새 비밀번호로 업데이트
+        user_update = UserUpdate(password=password_reset.new_password)
+        updated_user = user_crud.update(db, db_obj=user, obj_in=user_update)
+        
+        print(f"✅ 비밀번호 재설정 완료: {password_reset.email}")
+        
+        return PasswordResetConfirmResponse(
+            email=password_reset.email,
+            message="비밀번호가 성공적으로 재설정되었습니다"
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"❌ 비밀번호 재설정 오류: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"비밀번호 재설정 실패: {str(e)}")
 
 @router.post("/register", response_model=User)
 def create_user(
