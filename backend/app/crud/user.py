@@ -57,11 +57,20 @@ class CRUDUser:
     
     def authenticate_by_email(self, db: Session, email: str, password: str) -> Optional[User]:
         """이메일로 사용자 인증"""
+        print(f"🔍 인증 시도: email={email}")
+        
         user = self.get_by_email(db, email=email)
         if not user:
+            print(f"❌ 사용자를 찾을 수 없음: {email}")
             return None
+        
+        print(f"✅ 사용자 발견: username={user.username}, user_id={user.id}")
+        
         if not verify_password(password, user.hashed_password):
+            print(f"❌ 비밀번호 불일치: {email}")
             return None
+        
+        print(f"✅ 인증 성공: {email}")
         return user
     
     def is_active(self, user: User) -> bool:

@@ -30,13 +30,19 @@ def login(
 ):
     """사용자 로그인"""
     try:
+        print(f"🔍 로그인 시도: email={user_credentials.email}")
+        
         # 사용자 인증 (이메일로 사용자 찾기)
         user = user_crud.authenticate_by_email(db, email=user_credentials.email, password=user_credentials.password)
         if not user:
+            print(f"❌ 로그인 실패: 잘못된 이메일 또는 비밀번호 - {user_credentials.email}")
             raise HTTPException(status_code=401, detail="잘못된 이메일 또는 비밀번호입니다")
         
         if not user_crud.is_active(user):
+            print(f"❌ 로그인 실패: 비활성화된 사용자 - {user_credentials.email}")
             raise HTTPException(status_code=400, detail="비활성화된 사용자입니다")
+        
+        print(f"✅ 로그인 성공: username={user.username}, user_id={user.id}")
         
         # 액세스 토큰 생성
         access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
@@ -53,6 +59,7 @@ def login(
     except HTTPException:
         raise
     except Exception as e:
+        print(f"❌ 로그인 오류: {str(e)}")
         raise HTTPException(status_code=500, detail=f"로그인 실패: {str(e)}")
 
 @router.post("/register", response_model=User)
