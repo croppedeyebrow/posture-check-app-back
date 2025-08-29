@@ -40,6 +40,16 @@ class PasswordResetConfirmResponse(BaseModel):
     email: str
     message: str
 
+class PasswordCheck(BaseModel):
+    email: str
+    password: str
+
+class PasswordCheckResponse(BaseModel):
+    email: str
+    username: str
+    password_match: bool
+    message: str
+
 @router.post("/login", response_model=Token)
 def login(
     user_credentials: UserLogin,
@@ -78,6 +88,49 @@ def login(
     except Exception as e:
         print(f"❌ 로그인 오류: {str(e)}")
         raise HTTPException(status_code=500, detail=f"로그인 실패: {str(e)}")
+
+@router.post("/check-password", response_model=PasswordCheckResponse)
+def check_password(
+    password_data: PasswordCheck,
+    db: Session = Depends(get_db)
+):
+    """이메일과 비밀번호 확인 (개발/테스트용)"""
+    try:
+        print(f"🔍 비밀번호 확인 시도: email={password_data.email}")
+        
+        # 이메일로 사용자 찾기
+        user = user_crud.get_by_email(db, email=password_data.email)
+        if not user:
+            print(f"❌ 사용자를 찾을 수 없음: {password_data.email}")
+            return PasswordCheckResponse(
+                email=password_data.email,
+                username="",
+                password_match=False,
+                message="사용자를 찾을 수 없습니다"
+            )
+        
+        print(f"✅ 사용자 발견: username={user.username}, user_id={user.id}")
+        
+        # 비밀번호 확인
+        is_password_correct = verify_password(password_data.password, user.hashed_password)
+        
+        if is_password_correct:
+            print(f"✅ 비밀번호 일치: {password_data.email}")
+            message = "비밀번호가 일치합니다"
+        else:
+            print(f"❌ 비밀번호 불일치: {password_data.email}")
+            message = "비밀번호가 일치하지 않습니다"
+        
+        return PasswordCheckResponse(
+            email=password_data.email,
+            username=user.username,
+            password_match=is_password_correct,
+            message=message
+        )
+        
+    except Exception as e:
+        print(f"❌ 비밀번호 확인 오류: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"비밀번호 확인 실패: {str(e)}")
 
 @router.post("/forgot-password", response_model=PasswordResetResponse)
 def forgot_password(
